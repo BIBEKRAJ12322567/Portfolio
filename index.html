@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibekraj Tripathy | Full Stack Developer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['Syne', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --cyan: #00d4ff;
+            --purple: #a855f7;
+            --bg: #040d1a;
+            --card: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .content { position: relative; z-index: 1; }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+        }
+
+        nav {
+            background: rgba(4, 13, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-link {
+            position: relative;
+            font-weight: 500;
+            color: #94a3b8;
+            transition: color 0.3s;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width 0.3s;
+        }
+        .nav-link:hover { color: white; }
+        .nav-link:hover::after { width: 100%; }
+
+        /* Profile Photo */
+        .profile-wrapper {
+            position: relative;
+            width: 240px; height: 240px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Outer diffuse glow */
+        .profile-glow {
+            position: absolute;
+            inset: -50px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,212,255,0.25) 0%, rgba(168,85,247,0.1) 45%, transparent 70%);
+            z-index: 0;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        /* Slow outer dashed orbit ring */
+        .profile-ring-2 {
+            position: absolute;
+            inset: -22px;
+            border-radius: 50%;
+            border: 1px dashed rgba(0,212,255,0.3);
+            animation: spin 18s linear infinite;
+            z-index: 1;
+        }
+        /* A dot on the orbit ring */
+        .profile-ring-2::before {
+            content: '';
+            position: absolute;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan);
+            top: -4px; left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Inner solid gradient border ring */
+        .profile-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, var(--cyan) 0%, var(--purple) 50%, var(--cyan) 100%);
+            animation: spin 5s linear infinite;
+            z-index: 2;
+        }
+
+        /* Photo itself */
+        .profile-photo {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--bg);
+            z-index: 3;
+        }
+        .profile-photo img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: center 8%;
+            /* Subtle desaturate so skin tones match the dark cool theme */
+            filter: saturate(0.85) contrast(1.05) brightness(0.97);
+        }
+        /* Cyan color-tint blend layer over the photo */
+        .profile-photo::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(
+                160deg,
+                rgba(0,212,255,0.1) 0%,
+                rgba(168,85,247,0.08) 60%,
+                transparent 100%
+            );
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-float { animation: float 6s ease-in-out infinite; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 9999px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.3);
+            color: var(--cyan);
+            font-size: 13px; font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: white; font-weight: 600;
+            padding: 14px 32px; border-radius: 9999px;
+            border: none; cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
+        .btn-primary:active { transform: translateY(0); box-shadow: 0 10px 20px rgba(0,0,0,0.25); }
+
+        .glass-shadow {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .section-title {
+            font-size: 1.75rem; font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        a.external {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: inherit; text-decoration: none;
+            border-bottom: 1px solid rgba(148,163,184,0.25);
+            padding-bottom: 2px;
+        }
+        a.external:hover { border-color: rgba(148,163,184,0.55); }
+
+        .social { display: flex; gap: 12px; }
+        .social a {
+            width: 44px; height: 44px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 9999px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .social a:hover { transform: translateY(-2px); background: rgba(255,255,255,0.12); }
+
+        .skill-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 9999px;
+            border: 1px solid rgba(148,163,184,0.25);
+            background: rgba(255,255,255,0.05);
+            color: rgba(226,232,240,0.9);
+            font-size: 13px; font-weight: 500;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+            font-size: 14px; color: rgba(148,163,184,0.75);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="three-canvas"></canvas>
+    <div class="min-h-screen flex flex-col">
+        <nav class="px-4 py-4 md:px-10">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <a href="#" class="text-lg font-bold tracking-wide">Bibekraj</a>
+                <div class="flex items-center gap-6">
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#work" class="nav-link">Work</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="content flex-1">
+            <section class="max-w-6xl mx-auto px-4 py-20 md:py-32">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <p class="text-sm uppercase tracking-widest text-slate-400">Full Stack Developer</p>
+                        <h1 class="text-5xl md:text-6xl font-bold mt-4 tracking-tight">
+                            Hi, I'm <span class="gradient-text">Bibekraj</span>.
+                        </h1>
+                        <p class="mt-6 text-lg leading-relaxed text-slate-300">
+                            I build modern web experiences with React, Node.js, and cloud platforms.
+                            I love crafting production-ready interfaces and scalable backends.
+                        </p>
+                        <div class="mt-8 flex flex-wrap gap-4">
+                            <a href="#work" class="btn-primary">View Work</a>
+                            <a href="mailto:hello@example.com" class="btn-primary" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.9);">Say Hello</a>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="profile-wrapper">
+                            <div class="profile-glow"></div>
+                            <div class="profile-ring-2"></div>
+                            <div class="profile-ring"></div>
+                            <div class="profile-photo">
+                                <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80" alt="Profile photo">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <section id="about" class="mt-24">
+                    <div class="grid gap-10 md:grid-cols-2 items-start">
+                        <div>
+                            <h2 class="section-title">About Me</h2>
+                            <p class="text-slate-300 leading-relaxed">
+                                I'm a passionate developer with a focus on building clean, user-friendly apps.
+                                I enjoy solving complex problems and turning ideas into polished products.
+                            </p>
+                            <p class="mt-4 text-slate-300 leading-relaxed">
+                                When I'm not coding, I love hiking, experimenting with new UI animations, and exploring the latest web APIs.
+                            </p>
+                        </div>
+                        <div class="glass p-6 rounded-2xl glass-shadow">
+                            <h3 class="text-xl font-semibold mb-4">Skills</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <span class="skill-tag">JavaScript</span>
+                                <span class="skill-tag">TypeScript</span>
+                                <span class="skill-tag">React</span>
+                                <span class="skill-tag">Node.js</span>
+                                <span class="skill-tag">Next.js</span>
+                                <span class="skill-tag">Tailwind CSS</span>
+                                <span class="skill-tag">AWS</span>
+                                <span class="skill-tag">Azure</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="work" class="mt-24">
+                    <div class="flex items-center justify-between">
+                        <h2 class="section-title">Selected Work</h2>
+                        <a href="#" class="external">See all projects →</a>
+                    </div>
+                    <div class="grid-2 mt-8">
+                        <div class="glass p-6 rounded-2xl glass-shadow">
+                            <h3 class="text-lg font-semibold">Portfolio Website</h3>
+                            <p class="mt-2 text-slate-300">A sleek personal site showcasing my projects and experience, built with React and Tailwind.</p>
+                            <div class="mt-4">
+                                <span class="badge">React</span>
+                                <span class="badge">Tailwind</span>
+                            </div>
+                        </div>
+                        <div class="glass p-6 rounded-2xl glass-shadow">
+                            <h3 class="text-lg font-semibold">Task Manager API</h3>
+                            <p class="mt-2 text-slate-300">A RESTful API with Node.js, Express, and MongoDB for managing tasks with authentication.</p>
+                            <div class="mt-4">
+                                <span class="badge">Node.js</span>
+                                <span class="badge">MongoDB</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="contact" class="mt-24">
+                    <h2 class="section-title">Get in touch</h2>
+                    <p class="text-slate-300 leading-relaxed">Want to work together or just say hi? Drop me a message and I'll get back to you soon.</p>
+                    <div class="mt-8 grid gap-6 md:grid-cols-2">
+                        <div class="glass p-6 rounded-2xl glass-shadow">
+                            <h3 class="text-lg font-semibold">Email</h3>
+                            <p class="mt-2 text-slate-300">hello@example.com</p>
+                        </div>
+                        <div class="glass p-6 rounded-2xl glass-shadow">
+                            <h3 class="text-lg font-semibold">LinkedIn</h3>
+                            <p class="mt-2 text-slate-300"><a href="#" class="external">linkedin.com/in/bibekraj</a></p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <footer class="footer">
+                <p>Made with ❤️ — Built on HTML + Tailwind + Three.js</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Three.js background animation
+        const canvas = document.getElementById('three-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 10);
+
+        const geometry = new THREE.IcosahedronGeometry(2, 4);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x00d4ff,
+            roughness: 0.35,
+            metalness: 0.7,
+            emissive: 0x071a30,
+            emissiveIntensity: 0.9,
+            transparent: true,
+            opacity: 0.85,
+            envMapIntensity: 1.1
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        const light1 = new THREE.PointLight(0x00d4ff, 1.2, 20);
+        light1.position.set(5, 5, 5);
+        scene.add(light1);
+
+        const light2 = new THREE.PointLight(0xa855f7, 0.6, 20);
+        light2.position.set(-5, -3, 5);
+        scene.add(light2);
+
+        const ambient = new THREE.AmbientLight(0x222222);
+        scene.add(ambient);
+
+        function resize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', resize);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            mesh.rotation.y += 0.002;
+            mesh.rotation.x += 0.0015;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
